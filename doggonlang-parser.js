@@ -28,7 +28,7 @@ const Tokens = {
   Multiply: () => new Token("Multiply", "*"),
   NewLine: () => new Token("NewLine", "\n"),
   Plus: () => new Token("Plus", "+"),
-  Print: val => new Token("Print", `console.log(${val})`),
+  Return: val => new Token("Return", `return ${val}`),
   Var: val => new Token("Var", val),
   While: () => new Token("While", "while ("),
   WhileEnd: () => new Token("WhileEnd", "}")
@@ -93,7 +93,7 @@ const parse = tokens => {
             return Tokens.Var(ch);
           }
 
-          return Tokens.Print(ch);
+          return Tokens.Return(ch);
         }
         return Tokens.Illegal();
     }
@@ -124,32 +124,34 @@ const transpile = ast => {
   });
 
   const str = nodes.join(" ");
-  eval(str);
+  // console.log(str);
+  const result = eval("(function() {" + str + "}())");
+
+  return result || null;
 };
 
-const code1 =
-  "lassie AWOO 5\nluna AWOO 6\nbailey AWOO lassie WOOF luna\nbailey";
-const code2 =
-  "roi AWOO 5\nRUF? roi YAP 2 VUH\n\troi AWOO roi ARF 3\nROWH\n\troi AWOO roi WOOF 100\nARRUF\nroi";
-const code3 =
-  "roi AWOO 5\nRUF? roi YIP 2 VUH\n\troi AWOO roi ARF 3\nROWH\n\troi AWOO roi WOOF 100\nARRUF\nroi";
-const code4 =
-  "quark AWOO 6 BARK 2\ngromit AWOO 5\nmilo AWOO 0\nGRRR milo YIP gromit BOW\n\tquark AWOO quark WOOF 3\n\tmilo AWOO milo WOOF 1\nBORF\nquark";
+const interpret = code => {
+  return transpile(parse(lexer(code)));
+};
 
-const problem =
-  "samantha AWOO 1\nhooch AWOO 500\neinstein AWOO 10\nfuji AWOO 0\nGRRR fuji YIP hooch BOW\n\tsamantha AWOO samantha WOOF 3\n\tRUF? samantha YAP 100 VUH\n\t\tsamantha AWOO samantha BARK 1\n\tROWH\n\t\teinstein AWOO einstein WOOF 1\n\t\tsamantha AWOO samantha ARF einstein\n\tARRUF\n\t\tfuji AWOO fuji WOOF 1\nBORF\nGRRR fuji YAP 0 BOW\n\tsamantha AWOO samantha WOOF 375\n\tfuji AWOO fuji BARK 3\nBORF\nsamantha";
+module.exports = {
+  interpret
+};
 
-// console.log(code1);
-// transpile(parse(lex2(code1)));
+(function() {
+  if (!module.parent) {
+    var fs = require("fs");
+    const filename = process.argv[2];
 
-// console.log(code2);
-// transpile(parse(lex2(code2)));
+    if (filename.slice(-4) !== ".dog") {
+      console.log(
+        "ERROR: Doggolang interpreter supports only files ending in .dog"
+      );
+      return;
+    }
 
-// console.log(code3);
-// transpile(parse(lex2(code3)));
-
-// console.log(code4);
-// transpile(parse(lex2(code4)));
-
-// console.log(problem);
-transpile(parse(lexer(problem)));
+    const data = fs.readFileSync(filename, "utf8");
+    const result = interpret(data);
+    console.log(result);
+  }
+})();
