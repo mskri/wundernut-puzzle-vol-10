@@ -30,7 +30,6 @@ const logAst = ast => {
 // --doggo is defined as parameter when the interpreter is run display
 // doggolang environment variables
 let doggoDebug = process.argv.includes("--doggo");
-const logDoggo = value => (doggoDebug ? console.table(value) : null);
 
 /**
  * Splits text into list of tokens
@@ -57,6 +56,12 @@ function lexer(input) {
     .filter(s => s.length)
     .filter(s => validateAgainsSpec(s));
 }
+const logDoggo = value => {
+  if (doggoDebug) {
+    console.log("Doggolang environment variables");
+    console.table(value);
+  }
+};
 
 const Token = (type, value) => ({
   type,
