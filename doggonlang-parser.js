@@ -1,137 +1,366 @@
-// Split string by spaces, trim mapped substrings and filter out empty strings
-function lexer(str) {
-  return str
-    .replace(/\n/g, " BR ")
+const doggolangSpec = [
+  [/\n\t/, "None"],
+  [/ARF/, "Multiply"],
+  [/ARRUF/, "IfEnd"],
+  [/AWOO/, "Assign"],
+  [/BARK/, "Minus"],
+  [/BORF/, "WhileEnd"],
+  [/BOW/, "WhileThen"],
+  [/GRRR/, "WhileStart"],
+  [/ROWH/, "IfElse"],
+  [/RUF\?/, "IfStart"],
+  [/VUH/, "IfThen"],
+  [/WOOF/, "Plus"],
+  [/YAP/, "GreaterThan"],
+  [/YIP/, "LesserThan"],
+  [/[0-9]+/, "Integer"],
+  [/[A-ZÄÅÖa-zäåö][A-ZÄÅÖa-zäåö0-9_]/, "Variable"]
+];
+
+let astDebug = process.argv.includes("--ast");
+const logAst = ast => {
+  if (astDebug) {
+    console.log("Abstract syntax tree (AST)");
+    console.table(ast);
+  }
+};
+
+let doggoDebug = process.argv.includes("--doggo");
+const logDoggo = value => (doggoDebug ? console.table(value) : null);
+
+/**
+ * Splits text into list of tokens
+ *
+ * Removes any tabs, new lines etc. then splits the input by whitespace/newline
+ * and then filters out any empty strings
+ */
+function lexer(input) {
+  const validateAgainsSpec = expression => {
+    const foundInSpec =
+      doggolangSpec.findIndex(exp => expression.match(exp[0])) > 0;
+
+    if (!foundInSpec) {
+      throw Error(`Illegal character: ${expression}`);
+    }
+
+    return true;
+  };
+
+  return input
     .replace(/\t/g, "")
-    .split(/\s+|\n|\r/)
+    .split(/\s+/)
     .map(s => s.trim())
-    .filter(s => s.length);
+    .filter(s => s.length)
+    .filter(s => validateAgainsSpec(s));
 }
 
-function Token(name, value) {
-  this.name = name;
-  this.value = value;
-}
+const Token = (type, value) => ({
+  type,
+  value
+});
 
 const Tokens = {
-  Else: () => new Token("Else", "} else {"),
-  EqualTo: () => new Token("EqualTo", "="),
-  GreaterThan: () => new Token("GreaterThan", ">"),
-  If: () => new Token("If", "if ("),
-  IfEnd: () => new Token("IfEnd", "}"),
-  IfThen: () => new Token("IfThen", ") {"),
-  Illegal: () => new Token("Illegal", ""),
-  Int: val => new Token("Int", val),
-  LeftBrace: () => new Token("LeftBrace", ") {"),
-  LesserThan: () => new Token("LesserThan", "<"),
-  Minus: () => new Token("Minus", "-"),
-  Multiply: () => new Token("Multiply", "*"),
-  NewLine: () => new Token("NewLine", "\n"),
-  Plus: () => new Token("Plus", "+"),
-  Return: val => new Token("Return", `return ${val}`),
-  Var: val => new Token("Var", val),
-  While: () => new Token("While", "while ("),
-  WhileEnd: () => new Token("WhileEnd", "}")
+  Else: () => Token("IfElse", "ROWH"),
+  Assign: () => Token("Assign", "AWOO"),
+  GreaterThan: () => Token("GreaterThan", "YAP"),
+  IfStart: () => Token("IfStart", "RUF?"),
+  IfEnd: () => Token("IfEnd", "ARRUF"),
+  IfThen: () => Token("IfThen", "VUH"),
+  Illegal: () => Token("Illegal", null),
+  Integer: value => Token("Integer", value),
+  LesserThan: () => Token("LesserThan", "YIP"),
+  Minus: () => Token("Minus", "BARK"),
+  Multiply: () => Token("Multiply", "ARF"),
+  Plus: () => Token("Plus", "WOOF"),
+  Return: value => Token("Return", value),
+  Variable: value => Token("Variable", value),
+  WhileStart: () => Token("WhileStart", "GRRR"),
+  WhileThen: () => Token("WhileThen", "BOW"),
+  WhileEnd: () => Token("WhileEnd", "BORF")
 };
+
+const isDigit = str => Number.isInteger(parseInt(str));
 
 const parse = tokens => {
   let pos = 0;
 
-  function peek() {
-    return tokens[pos];
-  }
+  const peek = () => tokens[pos];
+  const getNextToken = () => tokens[pos + 1];
+  const isEof = () => getNextToken() == null;
+  const isString = str =>
+    Object.prototype.toString.call(str) === "[object String]";
 
-  function consume() {
-    return tokens[pos++];
-  }
+  const lookupToken = token => {
+    if (isDigit(token)) return Tokens.Integer(parseInt(token));
 
-  function peek_next() {
-    return tokens[pos + 1];
-  }
-
-  function peek_prev() {
-    return tokens[pos - 1];
-  }
-
-  const lookup_token = ch => {
-    if (parseInt(ch)) {
-      return Tokens.Int(ch);
-    }
-
-    switch (ch) {
-      case "BR":
-        return Tokens.NewLine();
+    switch (token) {
+      case "ARF":
+        return Tokens.Multiply();
+      case "ARRUF":
+        return Tokens.IfEnd();
       case "AWOO":
-        return Tokens.EqualTo();
+        return Tokens.Assign();
+      case "BARK":
+        return Tokens.Minus();
+      case "BORF":
+        return Tokens.WhileEnd();
+      case "BOW":
+        return Tokens.WhileThen();
+      case "GRRR":
+        return Tokens.WhileStart();
+      case "ROWH":
+        return Tokens.Else();
+      case "RUF?":
+        return Tokens.IfStart();
+      case "VUH":
+        return Tokens.IfThen();
+      case "WOOF":
+        return Tokens.Plus();
       case "YAP":
         return Tokens.GreaterThan();
       case "YIP":
         return Tokens.LesserThan();
-      case "BARK":
-        return Tokens.Minus();
-      case "WOOF":
-        return Tokens.Plus();
-      case "ROWH":
-        return Tokens.Else();
-      case "RUF?":
-        return Tokens.If();
-      case "ARRUF":
-        return Tokens.IfEnd();
-      case "BORF":
-        return Tokens.WhileEnd();
-      case "VUH":
-        return Tokens.IfThen();
-      case "BOW":
-        return Tokens.LeftBrace();
-      case "ARF":
-        return Tokens.Multiply();
-      case "GRRR":
-        return Tokens.While();
       default:
-        if (Object.prototype.toString.call(ch) === "[object String]") {
-          if (peek_next() != null) {
-            return Tokens.Var(ch);
-          }
-
-          return Tokens.Return(ch);
+        if (isString(token)) {
+          if (isEof()) return Tokens.Return(token);
+          return Tokens.Variable(token);
         }
+
         return Tokens.Illegal();
     }
   };
 
   const parseAst = () => {
+    let token;
     let ast = [];
-    let ch;
 
-    while ((ch = peek())) {
-      let tok = lookup_token(ch);
-      // console.log(ch, "\t", tok);
-      ast.push(tok);
+    while ((token = peek())) {
+      const tokenType = lookupToken(token);
+      ast.push(tokenType);
       pos++;
     }
 
+    logAst(ast);
     return ast;
   };
 
   return parseAst();
 };
 
-const transpile = ast => {
-  let nodes = [];
+let doggo = {};
 
-  ast.forEach(node => {
-    nodes.push(node.value);
-  });
+const evaluate = ast => {
+  let pos = 0;
+  let outputValue = null;
 
-  const str = nodes.join(" ");
-  // console.log(str);
-  const result = eval("(function() {" + str + "}())");
+  const peek = () => ast[pos];
+  const getNextToken = () => ast[pos + 1];
+  const getPrevToken = () => ast[pos - 1];
+  const getTokenAt = p => ast[p];
 
-  return result || null;
+  const isAssignToken = token => token.type == "Assign";
+  const isIntegerToken = token => token.type == "Integer";
+  const isVariableToken = token => token.type == "Variable";
+
+  const getValue = token => {
+    if (isDigit(token)) return parseInt(token);
+    if (doggo.hasOwnProperty(token)) return doggo[token];
+    throw Error(`Variable "${token}" not defined`);
+  };
+
+  const setVariable = (name, value) =>
+    (doggo[name] = parseInt(value) || getValue(value));
+
+  const findPreviousVariableName = () => {
+    let loopPos = pos;
+
+    while (loopPos > 0) {
+      // Get previous token in the stream
+      const token = getTokenAt(--loopPos);
+
+      if (isAssignToken(token)) {
+        // Variable name is the value of the token preceeding the assign token
+        const variableToken = getTokenAt(--loopPos);
+
+        // TODO: needed?
+        if (!isVariableToken(variableToken)) {
+          throw Error('Invalid syntax! Token before AWOO should be "Variable"');
+        }
+
+        return variableToken.value;
+      }
+    }
+  };
+
+  const findNextTokenValue = () => {
+    const token = getNextToken();
+
+    if (isIntegerToken(token)) return parseInt(token.value);
+    if (isVariableToken(token)) return doggo[token.value];
+
+    throw Error("Illegal syntax!");
+  };
+
+  const findTokensUntil = type => {
+    let loopPos = pos;
+    let foundTokens = [];
+
+    // Loops forward trough the tokens in the stream until a matching token is
+    // found. Returns the tokens from the positon the lookup started to matching
+    // token
+    while (loopPos < ast.length) {
+      const token = getTokenAt(++loopPos);
+
+      if (token.type == type) {
+        return foundTokens;
+      }
+
+      foundTokens.push(token);
+    }
+
+    throw Error(`Illegal syntax! "${type}" should be used`);
+  };
+
+  const doAssign = () => {
+    const prev = getPrevToken();
+    const next = getNextToken();
+
+    setVariable(prev.value, next.value);
+  };
+
+  const doPlus = () => {
+    const varName = findPreviousVariableName();
+    const previousValue = getValue(varName);
+    const nextValue = findNextTokenValue();
+
+    setVariable(varName, previousValue + nextValue);
+  };
+
+  const doMinus = () => {
+    const varName = findPreviousVariableName();
+    const previousValue = getValue(varName);
+    const nextValue = findNextTokenValue();
+
+    setVariable(varName, previousValue - nextValue);
+  };
+
+  const doMultiply = () => {
+    const varName = findPreviousVariableName();
+    const previousValue = getValue(varName);
+    const nextValue = findNextTokenValue();
+
+    setVariable(varName, previousValue * nextValue);
+  };
+
+  const doGreaterThan = () => {
+    const prev = getPrevToken();
+    const next = getNextToken();
+    const prevValue = getValue(prev.value);
+    const nextValue = getValue(next.value);
+
+    outputValue = prevValue > nextValue;
+  };
+
+  const doLesserThan = () => {
+    const prev = getPrevToken();
+    const next = getNextToken();
+    const prevValue = getValue(prev.value);
+    const nextValue = getValue(next.value);
+
+    outputValue = prevValue < nextValue;
+  };
+
+  const doIfStart = () => {
+    const tokensUntilThen = findTokensUntil("IfThen");
+    const tokensUntilElse = findTokensUntil("IfElse");
+    const tokensUntilEnd = findTokensUntil("IfEnd");
+    const totalSizeOfIfBlock = tokensUntilEnd.length;
+
+    const tokensInIfBlock = tokensUntilElse.splice(
+      tokensUntilThen.length + 1,
+      tokensUntilElse.length
+    );
+
+    const tokensInElseBlock = tokensUntilEnd.splice(
+      tokensUntilThen.length + tokensUntilElse.length + 3, //3 from the skipped if, then, else
+      tokensUntilEnd.length
+    );
+
+    const isTrue = evaluate(tokensUntilThen);
+    if (isTrue) {
+      // Interpret the first block of if-else
+      evaluate(tokensInIfBlock);
+      pos += totalSizeOfIfBlock;
+    } else {
+      // Interpret the second block of if-else
+      evaluate(tokensInElseBlock);
+      pos += totalSizeOfIfBlock;
+    }
+  };
+
+  const doWhileStart = () => {
+    const tokensUntilThen = findTokensUntil("WhileThen");
+    const tokensUntilEnd = findTokensUntil("WhileEnd");
+    const totalSizeOfIfBlock = tokensUntilEnd.length;
+
+    const tokensInWhileBlock = tokensUntilEnd.splice(
+      tokensUntilThen.length + 1,
+      tokensUntilEnd.length
+    );
+
+    while (evaluate(tokensUntilThen)) {
+      evaluate(tokensInWhileBlock);
+    }
+
+    pos += totalSizeOfIfBlock;
+  };
+
+  const doReturn = () => {
+    const value = getValue(token.value);
+    outputValue = value;
+  };
+
+  while ((token = peek())) {
+    switch (token.type) {
+      case "Assign":
+        doAssign();
+        break;
+      case "Plus":
+        doPlus();
+        break;
+      case "Minus":
+        doMinus();
+        break;
+      case "Multiply":
+        doMultiply();
+        break;
+      case "IfStart":
+        doIfStart();
+        break;
+      case "Return":
+        doReturn();
+        break;
+      case "GreaterThan":
+        doGreaterThan();
+        break;
+      case "LesserThan":
+        doLesserThan();
+        break;
+      case "WhileStart":
+        doWhileStart();
+        break;
+    }
+
+    pos++;
+  }
+
+  return outputValue;
 };
 
 const interpret = code => {
-  return transpile(parse(lexer(code)));
+  const result = evaluate(parse(lexer(code)));
+  logDoggo(doggo);
+  return result;
 };
 
 module.exports = {
@@ -140,13 +369,11 @@ module.exports = {
 
 (function() {
   if (!module.parent) {
-    var fs = require("fs");
+    const fs = require("fs");
     const filename = process.argv[2];
 
     if (filename.slice(-4) !== ".dog") {
-      console.log(
-        "ERROR: Doggolang interpreter supports only files ending in .dog"
-      );
+      console.log("Doggolang interpreter supports only files ending in .dog");
       return;
     }
 
