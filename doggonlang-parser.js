@@ -126,7 +126,7 @@ const parse = tokens => {
           return Tokens.Variable(token);
         }
 
-        return Tokens.Illegal();
+        throw Error("Illegal token!");
     }
   };
 
