@@ -17,4 +17,7 @@ assert(doggo.interpret(hint3) == 105, "Hint #3 result should be 105");
 const hint4 = fs.readFileSync("hint4.dog", "utf8");
 assert(doggo.interpret(hint4) == 19, "Hint #4 result should be 19");
 
+const task = fs.readFileSync("task.dog", "utf8");
+assert(doggo.interpret(task) == 64185, "Task result should be 64185");
+
 console.log("All tests ok!");
