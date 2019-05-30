@@ -142,28 +142,28 @@ function evaluate(ast, doggo) {
     const tokensUntilThen = findTokensUntil("IfThen");
     const tokensUntilElse = findTokensUntil("IfElse");
     const tokensUntilEnd = findTokensUntil("IfEnd");
-    const totalSizeOfIfBlock = tokensUntilEnd.length;
 
-    const tokensInIfBlock = tokensUntilElse.splice(
-      tokensUntilThen.length + 1,
+    const ifBlockTokens = tokensUntilElse.slice(
+      tokensUntilThen.length + 1, // add one to skip the IfThen token
       tokensUntilElse.length
     );
 
-    const tokensInElseBlock = tokensUntilEnd.splice(
-      tokensUntilThen.length + tokensUntilElse.length + 3, //3 from the skipped if, then, else
+    const elseBlockTokens = tokensUntilEnd.slice(
+      tokensUntilElse.length + 1, // add one to skip the IfElse token
       tokensUntilEnd.length
     );
 
-    const isTrue = evaluate(tokensUntilThen, doggo);
-    if (isTrue) {
-      // Interpret the first block of if-else
-      evaluate(tokensInIfBlock, doggo);
-      pos += totalSizeOfIfBlock;
+    // Evaluate the greater/lesser than clause, returns true or false
+    const evaluateIfBlock = evaluate(tokensUntilThen, doggo);
+    if (evaluateIfBlock) {
+      // Interpret the if block
+      evaluate(ifBlockTokens, doggo);
     } else {
-      // Interpret the second block of if-else
-      evaluate(tokensInElseBlock, doggo);
-      pos += totalSizeOfIfBlock;
+      // Interpret the else block
+      evaluate(elseBlockTokens, doggo);
     }
+
+    pos += tokensUntilEnd.length;
   };
 
   const processWhileStart = () => {
