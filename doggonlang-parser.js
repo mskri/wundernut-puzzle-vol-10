@@ -71,7 +71,7 @@ const Tokens = {
   LesserThan: () => Token("LesserThan", "YIP"),
   Minus: () => Token("Minus", "BARK"),
   Multiply: () => Token("Multiply", "ARF"),
-  Plus: () => Token("Plus", "WOOF"),
+  Sum: () => Token("Sum", "WOOF"),
   Return: value => Token("Return", value),
   Variable: value => Token("Variable", value),
   WhileStart: () => Token("WhileStart", "GRRR"),
@@ -115,7 +115,7 @@ const parse = tokens => {
       case "VUH":
         return Tokens.IfThen();
       case "WOOF":
-        return Tokens.Plus();
+        return Tokens.Sum();
       case "YAP":
         return Tokens.GreaterThan();
       case "YIP":
@@ -228,7 +228,7 @@ const evaluate = ast => {
     setVariable(prev.value, next.value);
   };
 
-  const doPlus = () => {
+  const doSum = () => {
     const varName = findPreviousVariableName();
     const previousValue = getValue(varName);
     const nextValue = findNextTokenValue();
@@ -325,8 +325,8 @@ const evaluate = ast => {
       case "Assign":
         doAssign();
         break;
-      case "Plus":
-        doPlus();
+      case "Sum":
+        doSum();
         break;
       case "Minus":
         doMinus();
