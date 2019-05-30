@@ -84,7 +84,7 @@ const isDigit = str => Number.isInteger(parseInt(str));
 const parse = tokens => {
   let pos = 0;
 
-  const peek = () => tokens[pos];
+  const getCurrentToken = () => tokens[pos];
   const getNextToken = () => tokens[pos + 1];
   const isEof = () => getNextToken() == null;
   const isString = str =>
@@ -134,7 +134,7 @@ const parse = tokens => {
     let token;
     let ast = [];
 
-    while ((token = peek())) {
+    while ((token = getCurrentToken())) {
       const tokenType = lookupToken(token);
       ast.push(tokenType);
       pos++;
@@ -153,7 +153,7 @@ const evaluate = ast => {
   let pos = 0;
   let outputValue = null;
 
-  const peek = () => ast[pos];
+  const getCurrentToken = () => ast[pos];
   const getNextToken = () => ast[pos + 1];
   const getPrevToken = () => ast[pos - 1];
   const getTokenAt = p => ast[p];
@@ -320,7 +320,7 @@ const evaluate = ast => {
     outputValue = value;
   };
 
-  while ((token = peek())) {
+  while ((token = getCurrentToken())) {
     switch (token.type) {
       case "Assign":
         doAssign();
