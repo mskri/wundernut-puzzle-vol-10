@@ -1,21 +1,4 @@
-const doggolangSpec = [
-  [/\n\t/, "None"],
-  [/ARF/, "Multiply"],
-  [/ARRUF/, "IfEnd"],
-  [/AWOO/, "Assign"],
-  [/BARK/, "Minus"],
-  [/BORF/, "WhileEnd"],
-  [/BOW/, "WhileThen"],
-  [/GRRR/, "WhileStart"],
-  [/ROWH/, "IfElse"],
-  [/RUF\?/, "IfStart"],
-  [/VUH/, "IfThen"],
-  [/WOOF/, "Plus"],
-  [/YAP/, "GreaterThan"],
-  [/YIP/, "LesserThan"],
-  [/[0-9]+/, "Integer"],
-  [/[A-ZÄÅÖa-zäåö][A-ZÄÅÖa-zäåö0-9_]/, "Variable"]
-];
+const lexer = require("./lexer.js");
 
 // --ast is defined as parameter when the interpreter is run display
 // AST stream
@@ -30,32 +13,6 @@ const logAst = ast => {
 // --doggo is defined as parameter when the interpreter is run display
 // doggolang environment variables
 let doggoDebug = process.argv.includes("--doggo");
-
-/**
- * Splits text into list of tokens
- *
- * Removes any tabs, new lines etc. then splits the input by whitespace/newline
- * and then filters out any empty strings
- */
-function lexer(input) {
-  const validateAgainsSpec = expression => {
-    const foundInSpec =
-      doggolangSpec.findIndex(exp => expression.match(exp[0])) > 0;
-
-    if (!foundInSpec) {
-      throw Error(`Illegal character: ${expression}`);
-    }
-
-    return true;
-  };
-
-  return input
-    .replace(/\t/g, "")
-    .split(/\s+/)
-    .map(s => s.trim())
-    .filter(s => s.length)
-    .filter(s => validateAgainsSpec(s));
-}
 const logDoggo = value => {
   if (doggoDebug) {
     console.log("Doggolang environment variables");
