@@ -21,6 +21,8 @@ function evaluate(ast, doggo) {
   const setVariable = (name, value) =>
     (doggo[name] = parseInt(value) || getValue(value));
 
+  // Loops backwards trough the tokens stream until a Variable type token is
+  // found and then returns the name of that variable
   const findPreviousVariableName = () => {
     let loopPos = pos;
 
@@ -32,7 +34,6 @@ function evaluate(ast, doggo) {
         // Variable name is the value of the token preceeding the assign token
         const variableToken = getTokenAt(--loopPos);
 
-        // TODO: needed?
         if (!isVariableToken(variableToken)) {
           throw Error('Invalid syntax! Token before AWOO should be "Variable"');
         }
@@ -43,21 +44,21 @@ function evaluate(ast, doggo) {
   };
 
   const findNextTokenValue = () => {
-    const token = getNextToken();
+    const nextToken = getNextToken();
 
-    if (isIntegerToken(token)) return parseInt(token.value);
-    if (isVariableToken(token)) return doggo[token.value];
+    if (isIntegerToken(nextToken)) return parseInt(nextToken.value);
+    if (isVariableToken(nextToken)) return doggo[nextToken.value];
 
     throw Error("Illegal syntax!");
   };
 
-  const findTokensUntil = type => {
+  // Loops forward trough the tokens stream until a matching token is
+  // found. Returns the tokens from the positon the lookup started to matching
+  // token
+  const findTokensUntil = tokenType => {
     let loopPos = pos;
     let foundTokens = [];
 
-    // Loops forward trough the tokens in the stream until a matching token is
-    // found. Returns the tokens from the positon the lookup started to matching
-    // token
     while (loopPos < ast.length) {
       const token = getTokenAt(++loopPos);
 
@@ -71,14 +72,14 @@ function evaluate(ast, doggo) {
     throw Error(`Illegal syntax! "${type}" should be used`);
   };
 
-  const doAssign = () => {
+  const processAssign = () => {
     const prev = getPrevToken();
     const next = getNextToken();
 
     setVariable(prev.value, next.value);
   };
 
-  const doSum = () => {
+  const processSum = () => {
     const varName = findPreviousVariableName();
     const previousValue = getValue(varName);
     const nextValue = findNextTokenValue();
@@ -86,7 +87,7 @@ function evaluate(ast, doggo) {
     setVariable(varName, previousValue + nextValue);
   };
 
-  const doMinus = () => {
+  const processMinus = () => {
     const varName = findPreviousVariableName();
     const previousValue = getValue(varName);
     const nextValue = findNextTokenValue();
@@ -94,7 +95,7 @@ function evaluate(ast, doggo) {
     setVariable(varName, previousValue - nextValue);
   };
 
-  const doMultiply = () => {
+  const processMultiply = () => {
     const varName = findPreviousVariableName();
     const previousValue = getValue(varName);
     const nextValue = findNextTokenValue();
@@ -102,25 +103,29 @@ function evaluate(ast, doggo) {
     setVariable(varName, previousValue * nextValue);
   };
 
-  const doGreaterThan = () => {
-    const prev = getPrevToken();
-    const next = getNextToken();
-    const prevValue = getValue(prev.value);
-    const nextValue = getValue(next.value);
+  // Sets the value of the greater than check as outputValue. It will be used
+  // by the function invoking greater than check
+  const processGreaterThan = () => {
+    const prevToken = getPrevToken();
+    const nextToken = getNextToken();
+    const prevValue = getValue(prevToken.value);
+    const nextValue = getValue(nextToken.value);
 
     outputValue = prevValue > nextValue;
   };
 
-  const doLesserThan = () => {
-    const prev = getPrevToken();
-    const next = getNextToken();
-    const prevValue = getValue(prev.value);
-    const nextValue = getValue(next.value);
+  // Sets the value of the lesser than check as outputValue. It will be used
+  // by the function invoking lesser than check
+  const processLesserThan = () => {
+    const prevToken = getPrevToken();
+    const nextToken = getNextToken();
+    const prevValue = getValue(prevToken.value);
+    const nextValue = getValue(nextToken.value);
 
     outputValue = prevValue < nextValue;
   };
 
-  const doIfStart = () => {
+  const processIfStart = () => {
     const tokensUntilThen = findTokensUntil("IfThen");
     const tokensUntilElse = findTokensUntil("IfElse");
     const tokensUntilEnd = findTokensUntil("IfEnd");
@@ -148,7 +153,7 @@ function evaluate(ast, doggo) {
     }
   };
 
-  const doWhileStart = () => {
+  const processWhileStart = () => {
     const tokensUntilThen = findTokensUntil("WhileThen");
     const tokensUntilEnd = findTokensUntil("WhileEnd");
     const totalSizeOfIfBlock = tokensUntilEnd.length;
@@ -165,7 +170,7 @@ function evaluate(ast, doggo) {
     pos += totalSizeOfIfBlock;
   };
 
-  const doReturn = () => {
+  const processReturn = () => {
     const value = getValue(token.value);
     outputValue = value;
   };
@@ -173,31 +178,31 @@ function evaluate(ast, doggo) {
   while ((token = getCurrentToken())) {
     switch (token.type) {
       case "Assign":
-        doAssign();
+        processAssign();
         break;
       case "Sum":
-        doSum();
+        processSum();
         break;
       case "Minus":
-        doMinus();
+        processMinus();
         break;
       case "Multiply":
-        doMultiply();
+        processMultiply();
         break;
       case "IfStart":
-        doIfStart();
+        processIfStart();
         break;
       case "Return":
-        doReturn();
+        processReturn();
         break;
       case "GreaterThan":
-        doGreaterThan();
+        processGreaterThan();
         break;
       case "LesserThan":
-        doLesserThan();
+        processLesserThan();
         break;
       case "WhileStart":
-        doWhileStart();
+        processWhileStart();
         break;
     }
 
