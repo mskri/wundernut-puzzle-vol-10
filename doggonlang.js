@@ -324,8 +324,12 @@ const evaluate = ast => {
 };
 
 const interpret = code => {
-  const result = evaluate(parse(lexer(code)));
+  const tokens = lexer(code);
+  const ast = parse(tokens);
+  const result = evaluate(ast);
+
   logDoggo(doggo);
+
   return result;
 };
 
@@ -334,17 +338,21 @@ module.exports = {
 };
 
 (function() {
+  const isDogFile = filename => filename.slice(-4) === ".dog";
+
   if (!module.parent) {
     const fs = require("fs");
     const filename = process.argv[2];
 
-    if (filename.slice(-4) !== ".dog") {
-      console.log("Doggolang interpreter supports only files ending in .dog");
+    if (!isDogFile(filename)) {
+      console.log("Doggolang interpreter only supports .dog files");
       return;
     }
 
-    const data = fs.readFileSync(filename, "utf8");
-    const result = interpret(data);
-    console.log(result);
+    fs.readFile(filename, "utf8", (err, data) => {
+      if (err) throw err;
+      const result = interpret(data);
+      console.log(result);
+    });
   }
 })();
