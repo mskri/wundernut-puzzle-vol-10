@@ -17,6 +17,8 @@ const doggolangSpec = [
   [/[A-ZÄÅÖa-zäåö][A-ZÄÅÖa-zäåö0-9_]/, "Variable"]
 ];
 
+// --ast is defined as parameter when the interpreter is run display
+// AST stream
 let astDebug = process.argv.includes("--ast");
 const logAst = ast => {
   if (astDebug) {
@@ -25,6 +27,8 @@ const logAst = ast => {
   }
 };
 
+// --doggo is defined as parameter when the interpreter is run display
+// doggolang environment variables
 let doggoDebug = process.argv.includes("--doggo");
 const logDoggo = value => (doggoDebug ? console.table(value) : null);
 
