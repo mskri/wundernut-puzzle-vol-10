@@ -49,7 +49,11 @@ function evaluate(ast, doggo) {
     if (isIntegerToken(nextToken)) return parseInt(nextToken.value);
     if (isVariableToken(nextToken)) return doggo[nextToken.value];
 
-    throw Error("Illegal syntax!");
+    throw Error(
+      `Illegal syntax! Right side token for operation (ARF/WOOF/BARK) must be either Variable or Integer type, was "${
+        nextToken.type
+      }"`
+    );
   };
 
   // Loops forward trough the tokens stream until a matching token is
@@ -62,19 +66,28 @@ function evaluate(ast, doggo) {
     while (loopPos < ast.length) {
       const token = getTokenAt(++loopPos);
 
-      if (token.type == type) {
+      if (token == null) break;
+      if (token.type == tokenType) {
         return foundTokens;
       }
 
       foundTokens.push(token);
     }
 
-    throw Error(`Illegal syntax! "${type}" should be used`);
+    throw Error(`Illegal syntax! Missing "${tokenType}"`);
   };
 
   const processAssign = () => {
     const prev = getPrevToken();
     const next = getNextToken();
+
+    if (!isVariableToken(prev)) {
+      throw Error(
+        `Illegal syntax! Left side token of AWOO must be Variable type, was "${
+          prev.type
+        }"`
+      );
+    }
 
     setVariable(prev.value, next.value);
   };
