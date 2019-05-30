@@ -35,7 +35,7 @@ const Tokens = {
   WhileEnd: () => Token("WhileEnd", "BORF")
 };
 
-function parser(tokens) {
+function parse(tokens) {
   let pos = 0;
 
   const getCurrentToken = () => tokens[pos];
@@ -101,4 +101,4 @@ function parser(tokens) {
   return parseAst();
 }
 
-module.exports = parser;
+module.exports = parse;
