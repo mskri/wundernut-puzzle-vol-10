@@ -3,25 +3,28 @@
 
 const assert = require("assert").strict;
 const fs = require("fs");
-const interpret = require("./interpreter.js");
+const path = require("path");
+const interpret = require("../interpreter.js");
 
-const hint1 = fs.readFileSync("./tests/hint1.dog", "utf8");
+const file = filename => path.resolve(`${__dirname}/${filename}`);
+
+const hint1 = fs.readFileSync(file("./hint1.dog"), "utf8");
 const result1 = interpret(hint1);
 assert(result1 == 11, `Hint #1 result should be 11, was ${result1}`);
 
-const hint2 = fs.readFileSync("./tests/hint2.dog", "utf8");
+const hint2 = fs.readFileSync(file("./hint2.dog"), "utf8");
 const result2 = interpret(hint2);
 assert(result2 == 15, `Hint #2 result should be 15, was ${result2}`);
 
-const hint3 = fs.readFileSync("./tests/hint3.dog", "utf8");
+const hint3 = fs.readFileSync(file("./hint3.dog"), "utf8");
 const result3 = interpret(hint3);
 assert(result3 == 105, `Hint #3 result should be 105, was ${result3}`);
 
-const hint4 = fs.readFileSync("./tests/hint4.dog", "utf8");
+const hint4 = fs.readFileSync(file("./hint4.dog"), "utf8");
 const result4 = interpret(hint4);
 assert(result4 == 19, `Hint #4 result should be 19, was ${result4}`);
 
-const task = fs.readFileSync("./tests/task.dog", "utf8");
+const task = fs.readFileSync(file("./task.dog"), "utf8");
 const resultTask = interpret(task);
 assert(resultTask == 64185, `Task result should be 64185, was ${resultTask}`);
 
