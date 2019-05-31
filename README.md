@@ -17,7 +17,8 @@ could run any Doggolang code.
 
 ## Usage
 
-Interpret any _.dog_ file
+Interpret any _.dog_ file containing Doggolang code. Examples of Doggolang can
+be found in the `hint*.dog` files under `tests/`.
 
 ```bash
 node doggonlang.js <dogfile>
