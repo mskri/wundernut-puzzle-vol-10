@@ -18,6 +18,32 @@ function evaluate(ast, doggo) {
     throw Error(`Variable "${token}" not defined`);
   };
 
+  const getPrevTokenValue = () => {
+    const nextToken = getPrevToken();
+
+    if (isIntegerToken(nextToken)) return parseInt(nextToken.value);
+    if (isVariableToken(nextToken)) return doggo[nextToken.value];
+
+    throw Error(
+      `Illegal syntax! Should either Variable or Integer type, was "${
+        nextToken.type
+      }"`
+    );
+  };
+
+  const getNextTokenValue = () => {
+    const nextToken = getNextToken();
+
+    if (isIntegerToken(nextToken)) return parseInt(nextToken.value);
+    if (isVariableToken(nextToken)) return doggo[nextToken.value];
+
+    throw Error(
+      `Illegal syntax! Should either Variable or Integer type, was "${
+        nextToken.type
+      }"`
+    );
+  };
+
   const setVariable = (name, value) =>
     (doggo[name] = parseInt(value) || getValue(value));
 
@@ -41,19 +67,6 @@ function evaluate(ast, doggo) {
         return variableToken.value;
       }
     }
-  };
-
-  const findNextTokenValue = () => {
-    const nextToken = getNextToken();
-
-    if (isIntegerToken(nextToken)) return parseInt(nextToken.value);
-    if (isVariableToken(nextToken)) return doggo[nextToken.value];
-
-    throw Error(
-      `Illegal syntax! Right side token for operation (ARF/WOOF/BARK) must be either Variable or Integer type, was "${
-        nextToken.type
-      }"`
-    );
   };
 
   // Loops forward trough the tokens stream until a matching token is
@@ -95,7 +108,7 @@ function evaluate(ast, doggo) {
   const processSum = () => {
     const varName = findPreviousVariableName();
     const previousValue = getValue(varName);
-    const nextValue = findNextTokenValue();
+    const nextValue = getNextTokenValue();
 
     setVariable(varName, previousValue + nextValue);
   };
@@ -103,7 +116,7 @@ function evaluate(ast, doggo) {
   const processMinus = () => {
     const varName = findPreviousVariableName();
     const previousValue = getValue(varName);
-    const nextValue = findNextTokenValue();
+    const nextValue = getNextTokenValue();
 
     setVariable(varName, previousValue - nextValue);
   };
@@ -111,7 +124,7 @@ function evaluate(ast, doggo) {
   const processMultiply = () => {
     const varName = findPreviousVariableName();
     const previousValue = getValue(varName);
-    const nextValue = findNextTokenValue();
+    const nextValue = getNextTokenValue();
 
     setVariable(varName, previousValue * nextValue);
   };
@@ -119,10 +132,8 @@ function evaluate(ast, doggo) {
   // Sets the value of the greater than check as outputValue. It will be used
   // by the function invoking greater than check
   const processGreaterThan = () => {
-    const prevToken = getPrevToken();
-    const nextToken = getNextToken();
-    const prevValue = getValue(prevToken.value);
-    const nextValue = getValue(nextToken.value);
+    const prevValue = getPrevTokenValue();
+    const nextValue = getNextTokenValue();
 
     outputValue = prevValue > nextValue;
   };
@@ -130,10 +141,8 @@ function evaluate(ast, doggo) {
   // Sets the value of the lesser than check as outputValue. It will be used
   // by the function invoking lesser than check
   const processLesserThan = () => {
-    const prevToken = getPrevToken();
-    const nextToken = getNextToken();
-    const prevValue = getValue(prevToken.value);
-    const nextValue = getValue(nextToken.value);
+    const prevValue = getPrevTokenValue();
+    const nextValue = getNextTokenValue();
 
     outputValue = prevValue < nextValue;
   };
@@ -169,9 +178,8 @@ function evaluate(ast, doggo) {
   const processWhileStart = () => {
     const tokensUntilThen = findTokensUntil("WhileThen");
     const tokensUntilEnd = findTokensUntil("WhileEnd");
-    const totalSizeOfIfBlock = tokensUntilEnd.length;
 
-    const tokensInWhileBlock = tokensUntilEnd.splice(
+    const tokensInWhileBlock = tokensUntilEnd.slice(
       tokensUntilThen.length + 1,
       tokensUntilEnd.length
     );
@@ -180,45 +188,29 @@ function evaluate(ast, doggo) {
       evaluate(tokensInWhileBlock, doggo);
     }
 
-    pos += totalSizeOfIfBlock;
+    pos += tokensUntilEnd.length;
   };
 
   const processReturn = () => {
-    const value = getValue(token.value);
-    outputValue = value;
+    const token = getCurrentToken();
+    outputValue = getValue(token.value);
+  };
+
+  const TokenFunctions = {
+    Assign: () => processAssign(),
+    Sum: () => processSum(),
+    Minus: () => processMinus(),
+    Multiply: () => processMultiply(),
+    IfStart: () => processIfStart(),
+    Return: () => processReturn(),
+    GreaterThan: () => processGreaterThan(),
+    LesserThan: () => processLesserThan(),
+    WhileStart: () => processWhileStart()
   };
 
   while ((token = getCurrentToken())) {
-    switch (token.type) {
-      case "Assign":
-        processAssign();
-        break;
-      case "Sum":
-        processSum();
-        break;
-      case "Minus":
-        processMinus();
-        break;
-      case "Multiply":
-        processMultiply();
-        break;
-      case "IfStart":
-        processIfStart();
-        break;
-      case "Return":
-        processReturn();
-        break;
-      case "GreaterThan":
-        processGreaterThan();
-        break;
-      case "LesserThan":
-        processLesserThan();
-        break;
-      case "WhileStart":
-        processWhileStart();
-        break;
-    }
-
+    const processToken = TokenFunctions[token.type] || null;
+    if (processToken) processToken(token);
     pos++;
   }
 
